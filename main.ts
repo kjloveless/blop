@@ -14,25 +14,26 @@ if (import.meta.main) {
 
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
+  var bytesWritten = 0;
   for await (const chunk of Deno.stdin.readable) {
       const text = decoder.decode(chunk);
       const charCode = text.charCodeAt(0);
       if (charCode === 3 || charCode === 4) {
           disableRawMode();
+          console.log(`\nyou wrote ${bytesWritten} bytes this session!`)
           console.log("bye!");
           Deno.exit();
       }
 
       if (charCode < 32 || charCode > 126) {
-          console.log(`char code: ${charCode}`);
+          console.log(`\nchar code: ${charCode}`);
       }
 
       if (charCode === 13) {
           await Deno.stdout.write(encoder.encode("\n"));
       }
 
-      const bytesWritten = await Deno.stdout.write(chunk);
+      bytesWritten += await Deno.stdout.write(chunk);
 
   }
-
 }
