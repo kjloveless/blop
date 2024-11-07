@@ -23,7 +23,7 @@ if (import.meta.main) {
           Deno.exit();
       }
 
-      if (charCode < 32) {
+      if (charCode < 32 || charCode > 126) {
           console.log(`char code: ${charCode}`);
       }
 
