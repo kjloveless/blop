@@ -6,10 +6,17 @@ export function enableRawMode() {
     Deno.stdin.setRaw(true);
 }
 
+function exit(msg: string, code: number = 0) {
+    console.log(msg);
+    Deno.exit(code);
+}
+
 // Learn more at https://docs.deno.com/runtime/manual/examples/module_metadata#concepts
 if (import.meta.main) {
   if (Deno.stdin.isTerminal()) {
       enableRawMode();
+  } else {
+      exit(`this isn't a tty, sorry!`)
   }
 
   const decoder = new TextDecoder();
@@ -21,8 +28,7 @@ if (import.meta.main) {
       if (charCode === 3 || charCode === 4) {
           disableRawMode();
           console.log(`\nyou wrote ${bytesWritten} bytes this session!`)
-          console.log("bye!");
-          Deno.exit();
+          exit(`bye`);
       }
 
       if (charCode < 32 || charCode > 126) {
