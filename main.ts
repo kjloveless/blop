@@ -29,9 +29,10 @@ if (import.meta.main) {
     if (charCode === 27) {
       let i = 0;
       while (i < chunk.length) {
-        console.log(chunk[i]);
+        console.log(chunk[i] + " " + text[i]);
         i += 1;
       }
+      console.log(`${text}\n`);
       continue;
     }
 
