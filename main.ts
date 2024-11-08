@@ -27,11 +27,9 @@ if (import.meta.main) {
     const charCode = text.charCodeAt(0);
 
     if (charCode === 27) {
-      const seq = new Uint8Array(3);
-      bytesWritten += await Deno.stdin.read(seq);
       let i = 0;
-      while (i < seq.length) {
-        console.log(seq[i]);
+      while (i < chunk.length) {
+        console.log(chunk[i]);
         i += 1;
       }
       continue;
