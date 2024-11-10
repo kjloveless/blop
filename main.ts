@@ -4,6 +4,13 @@ const encoder = new TextEncoder();
 const cbreak = true;
 let bytesWritten = 0;
 
+interface EditorConfig {
+  screenRows: number;
+  screenCols: number;
+}
+
+const e: EditorConfig = {};
+
 function exit(msg: string, code: number = 0) {
   resetScreen();
 
@@ -42,6 +49,11 @@ function editorReadKey(): number {
   return buffer[0];
 }
 
+function getWindowSize() {
+  const { columns, rows } = Deno.consoleSize();
+  return { columns, rows };
+}
+
 function resetScreen() {
   write("\x1b[2J", true);
   write("\x1b[H", true);
@@ -49,7 +61,7 @@ function resetScreen() {
 
 function editorDrawRows() {
   let y = 0;
-  while (y < 24) {
+  while (y < e.screenRows) {
     write("~\r\n", true);
     y++;
   }
@@ -90,8 +102,15 @@ function ctrlKey(key: number | string): number {
   return typeof key === "string" ? key.charCodeAt(0) & 0x1f : key & 0x1f;
 }
 
+function initEditor() {
+  const { columns, rows } = getWindowSize();
+  e.screenRows = rows;
+  e.screenCols = columns;
+}
+
 if (import.meta.main) {
   enableRawMode();
+  initEditor();
 
   while(true) {
     editorRefreshScreen();
