@@ -41,6 +41,10 @@ function editorReadKey(): number {
   return buffer[0];
 }
 
+function editorRefreshScreen() {
+  write("\x1b[2J");
+}
+
 function editorProcessKeypress() {
   const char = editorReadKey();
 
@@ -69,6 +73,7 @@ if (import.meta.main) {
   enableRawMode();
 
   while(true) {
+    editorRefreshScreen();
     editorProcessKeypress();
   }
 
