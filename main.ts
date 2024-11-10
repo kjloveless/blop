@@ -43,6 +43,7 @@ function editorReadKey(): number {
 
 function editorRefreshScreen() {
   write("\x1b[2J");
+  write("\x1b[H");
 }
 
 function editorProcessKeypress() {
@@ -56,9 +57,10 @@ function editorProcessKeypress() {
 }
 
 // Generic write to stdout
-async function write(bytes: string | Uint8Array) {
+// needs to be sync, we need writes to occur in order... or something
+function write(bytes: string | Uint8Array) {
   const data = typeof bytes === "string" ? encoder.encode(bytes) : bytes;
-  bytesWritten += await Deno.stdout.write(data);
+  bytesWritten += Deno.stdout.writeSync(data);
 }
 
 function iscntrl(charCode: number): boolean {
