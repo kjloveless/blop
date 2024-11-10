@@ -1,6 +1,7 @@
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
 
+const cbreak = true;
 let bytesWritten = 0;
 
 function exit(msg: string, code: number = 0) {
@@ -14,8 +15,9 @@ function exit(msg: string, code: number = 0) {
 
 function enableRawMode() {
   // TODO: move cbreak config to .env
+  if (cbreak) console.log('signal breaking is on');
   if (Deno.stdin.isTerminal) {
-    Deno.stdin.setRaw(true, {cbreak: false});
+    Deno.stdin.setRaw(true, {cbreak});
   } else {
     console.error('please run me in a terminal');
     exit("error: enableRawMode() not a terminal", -1);
@@ -25,6 +27,28 @@ function enableRawMode() {
 // pretty sure Deno disables raw mode, but we like safety
 function disableRawMode() {
   Deno.stdin.setRaw(false);
+}
+
+// sync reading... cuz we kinda need some input...
+function editorReadKey(): number {
+  const buffer = new Uint8Array(1);
+  let bytesRead: number = 0;
+
+  while (bytesRead != 1) {
+    bytesRead = Deno.stdin.readSync(buffer);
+  }
+  if (cbreak) console.log(`${buffer[0]}`)
+  return buffer[0];
+}
+
+function editorProcessKeypress() {
+  const char = editorReadKey();
+
+  switch (char) {
+    case ctrlKey('q'):
+      exit('q->exit');
+      break;
+  }
 }
 
 // Generic write to stdout
@@ -44,20 +68,8 @@ function ctrlKey(key: number | string): number {
 if (import.meta.main) {
   enableRawMode();
 
-  // raw mode enabled
-  for await (const chunk of Deno.stdin.readable) {
-    const text = decoder.decode(chunk);
-    if (text === 'q') exit('q->exit');
-
-    const charCode = chunk[0];
-
-    if (iscntrl(charCode)) {
-      write(`${chunk}\r\n`);
-    } else {
-      write(`${chunk} ('${text}')\r\n`);
-    }
-
-    if (charCode == ctrlKey('q')) break;
+  while(true) {
+    editorProcessKeypress();
   }
 
   exit(`bye!`);
