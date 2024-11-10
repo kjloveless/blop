@@ -5,6 +5,8 @@ const cbreak = true;
 let bytesWritten = 0;
 
 function exit(msg: string, code: number = 0) {
+  resetScreen();
+
   console.log(`${bytesWritten} bytes written this session!\r\n${msg}\r\n`);
 
   Deno.stdin.close();
@@ -37,13 +39,28 @@ function editorReadKey(): number {
   while (bytesRead != 1) {
     bytesRead = Deno.stdin.readSync(buffer);
   }
-  if (cbreak) console.log(`${buffer[0]}`)
   return buffer[0];
 }
 
+function resetScreen() {
+  write("\x1b[2J", true);
+  write("\x1b[H", true);
+}
+
+function editorDrawRows() {
+  let y = 0;
+  while (y < 24) {
+    write("~\r\n", true);
+    y++;
+  }
+}
+
 function editorRefreshScreen() {
-  write("\x1b[2J");
-  write("\x1b[H");
+  resetScreen();
+
+  editorDrawRows();
+
+  write("\x1b[H", true);
 }
 
 function editorProcessKeypress() {
@@ -58,9 +75,11 @@ function editorProcessKeypress() {
 
 // Generic write to stdout
 // needs to be sync, we need writes to occur in order... or something
-function write(bytes: string | Uint8Array) {
+function write(bytes: string | Uint8Array, guiBytes: boolean = false) {
   const data = typeof bytes === "string" ? encoder.encode(bytes) : bytes;
-  bytesWritten += Deno.stdout.writeSync(data);
+  const written = Deno.stdout.writeSync(data);
+
+  if (!guiBytes) bytesWritten += written;
 }
 
 function iscntrl(charCode: number): boolean {
