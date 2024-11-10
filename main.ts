@@ -1,55 +1,64 @@
-export function disableRawMode() {
-  Deno.stdin.setRaw(false);
-}
+const decoder = new TextDecoder();
+const encoder = new TextEncoder();
 
-export function enableRawMode() {
-  Deno.stdin.setRaw(true);
-}
+let bytesWritten = 0;
 
 function exit(msg: string, code: number = 0) {
-  console.log(msg);
+  console.log(`${bytesWritten} bytes written this session!\r\n${msg}\r\n`);
+
+  Deno.stdin.close();
+  Deno.stdout.close();
+
   Deno.exit(code);
 }
 
-// Learn more at https://docs.deno.com/runtime/manual/examples/module_metadata#concepts
-if (import.meta.main) {
-  if (Deno.stdin.isTerminal()) {
-    enableRawMode();
+function enableRawMode() {
+  // TODO: move cbreak config to .env
+  if (Deno.stdin.isTerminal) {
+    Deno.stdin.setRaw(true, {cbreak: false});
   } else {
-    exit(`this isn't a tty, sorry!`);
+    console.error('please run me in a terminal');
+    exit("error: enableRawMode() not a terminal", -1);
   }
+}
 
-  const decoder = new TextDecoder();
-  const encoder = new TextEncoder();
-  var bytesWritten = 0;
+// pretty sure Deno disables raw mode, but we like safety
+function disableRawMode() {
+  Deno.stdin.setRaw(false);
+}
+
+// Generic write to stdout
+async function write(bytes: string | Uint8Array) {
+  const data = typeof bytes === "string" ? encoder.encode(bytes) : bytes;
+  bytesWritten += await Deno.stdout.write(data);
+}
+
+function iscntrl(charCode: number): boolean {
+  return (charCode < 32 || charCode === 127) ? true : false; 
+}
+
+function ctrlKey(key: number | string): number {
+  return typeof key === "string" ? key.charCodeAt(0) & 0x1f : key & 0x1f;
+}
+
+if (import.meta.main) {
+  enableRawMode();
+
+  // raw mode enabled
   for await (const chunk of Deno.stdin.readable) {
     const text = decoder.decode(chunk);
-    const charCode = text.charCodeAt(0);
+    if (text === 'q') exit('q->exit');
 
-    if (charCode === 27) {
-      let i = 0;
-      while (i < chunk.length) {
-        console.log(chunk[i] + " " + text[i]);
-        i += 1;
-      }
-      console.log(`${text}\n`);
-      continue;
+    const charCode = chunk[0];
+
+    if (iscntrl(charCode)) {
+      write(`${chunk}\r\n`);
+    } else {
+      write(`${chunk} ('${text}')\r\n`);
     }
 
-    if (charCode === 3 || charCode === 4) {
-      disableRawMode();
-      console.log(`\nyou wrote ${bytesWritten} bytes this session!`);
-      exit(`bye`);
-    }
-
-    if (charCode < 32 || charCode > 126) {
-      console.log(`\nchar code: ${charCode}`);
-    }
-
-    if (charCode === 13) {
-      await Deno.stdout.write(encoder.encode("\n"));
-    }
-
-    bytesWritten += await Deno.stdout.write(chunk);
+    if (charCode == ctrlKey('q')) break;
   }
+
+  exit(`bye!`);
 }
