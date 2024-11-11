@@ -102,12 +102,14 @@ function editorDrawRows() {
 function editorRefreshScreen() {
   //resetScreen();
   
+  abAppend("\x1b[?25l");
   abAppend("\x1b[2J");
   abAppend("\x1b[H");
 
   editorDrawRows();
 
   abAppend("\x1b[H");
+  abAppend("\x1b[?25h");
 
   write(appendBuffer, true);
   abFree();
