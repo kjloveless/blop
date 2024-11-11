@@ -18,6 +18,8 @@ enum EditorKey {
   ARROW_RIGHT,
   ARROW_UP,
   ARROW_DOWN,
+  HOME_KEY,
+  END_KEY,
   PAGE_UP,
   PAGE_DOWN,
 }
@@ -80,11 +82,23 @@ function editorReadKey(): number {
       if (seq[1] >= '0' && seq[1] <= '9') {
         if (seq[2] == '~') {
           switch (seq[1]) {
+            case '1':
+              return EditorKey.HOME_KEY;
+              break;
+            case '4':
+              return EditorKey.END_KEY;
+              break;
             case '5':
               return EditorKey.PAGE_UP;
               break;
             case '6':
               return EditorKey.PAGE_DOWN;
+              break;
+            case '7':
+              return EditorKey.HOME_KEY;
+              break;
+            case '8':
+              return EditorKey.END_KEY;
               break;
           }
         }
@@ -102,7 +116,21 @@ function editorReadKey(): number {
           case 'D':
             return EditorKey.ARROW_LEFT
             break;
+          case 'H':
+            return EditorKey.HOME_KEY;
+            break;
+          case 'F':
+            return EditorKey.END_KEY;
         }
+      }
+    } else if (seq[0] == 'O') {
+      switch (seq[1]) {
+        case 'H':
+          return EditorKey.HOME_KEY;
+          break;
+        case 'F':
+          return EditorKey.END_KEY;
+          break;
       }
     }
 
@@ -215,6 +243,14 @@ function editorProcessKeypress() {
   switch (char) {
     case ctrlKey('q'):
       exit('ciao, ciao');
+      break;
+
+    case EditorKey.HOME_KEY:
+      e.cursorX = 0;
+      break;
+
+    case EditorKey.END_KEY:
+      e.cursorX = e.screenCols - 1;
       break;
 
     case EditorKey.PAGE_UP:
