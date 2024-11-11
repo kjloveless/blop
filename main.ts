@@ -10,6 +10,15 @@ interface EditorConfig {
 }
 
 const e: EditorConfig = {};
+let appendBuffer: string = "";
+
+function abAppend(msg: string) {
+  appendBuffer += msg;
+}
+
+function abFree() {
+  appendBuffer = "";
+}
 
 function exit(msg: string, code: number = 0) {
   resetScreen();
@@ -81,21 +90,27 @@ function resetScreen() {
 function editorDrawRows() {
   let y = 0;
   while (y < e.screenRows) {
-    write("~", true);
+    abAppend("~");
 
     if (y < e.screenRows - 1) {
-      write("\r\n", true);
+      abAppend("\r\n");
     }
     y++;
   }
 }
 
 function editorRefreshScreen() {
-  resetScreen();
+  //resetScreen();
+  
+  abAppend("\x1b[2J");
+  abAppend("\x1b[H");
 
   editorDrawRows();
 
-  write("\x1b[H", true);
+  abAppend("\x1b[H");
+
+  write(appendBuffer, true);
+  abFree();
 }
 
 function editorProcessKeypress() {
