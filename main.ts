@@ -81,7 +81,11 @@ function resetScreen() {
 function editorDrawRows() {
   let y = 0;
   while (y < e.screenRows) {
-    write("~\r\n", true);
+    write("~", true);
+
+    if (y < e.screenRows - 1) {
+      write("\r\n", true);
+    }
     y++;
   }
 }
