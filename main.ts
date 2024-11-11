@@ -18,6 +18,8 @@ enum EditorKey {
   ARROW_RIGHT,
   ARROW_UP,
   ARROW_DOWN,
+  PAGE_UP,
+  PAGE_DOWN,
 }
 
 const e: EditorConfig = {};
@@ -75,19 +77,32 @@ function editorReadKey(): number {
 
     const seq = decoder.decode(sequence);
     if(seq[0] == '[') {
-      switch (seq[1]) {
-        case 'A':
-          return EditorKey.ARROW_UP;
-          break;
-        case 'B':
-          return EditorKey.ARROW_DOWN;
-          break;
-        case 'C':
-          return EditorKey.ARROW_RIGHT;
-          break;
-        case 'D':
-          return EditorKey.ARROW_LEFT
-          break;
+      if (seq[1] >= '0' && seq[1] <= '9') {
+        if (seq[2] == '~') {
+          switch (seq[1]) {
+            case '5':
+              return EditorKey.PAGE_UP;
+              break;
+            case '6':
+              return EditorKey.PAGE_DOWN;
+              break;
+          }
+        }
+      } else {
+        switch (seq[1]) {
+          case 'A':
+            return EditorKey.ARROW_UP;
+            break;
+          case 'B':
+            return EditorKey.ARROW_DOWN;
+            break;
+          case 'C':
+            return EditorKey.ARROW_RIGHT;
+            break;
+          case 'D':
+            return EditorKey.ARROW_LEFT
+            break;
+        }
       }
     }
 
@@ -199,7 +214,15 @@ function editorProcessKeypress() {
 
   switch (char) {
     case ctrlKey('q'):
-      exit('q->exit');
+      exit('ciao, ciao');
+      break;
+
+    case EditorKey.PAGE_UP:
+    case EditorKey.PAGE_DOWN:
+      let times = e.screenRows;
+      while (times--) {
+        editorMoveCursor(char == EditorKey.PAGE_UP ? EditorKey.ARROW_UP : EditorKey.ARROW_DOWN);
+      }
       break;
 
     case EditorKey.ARROW_UP:
