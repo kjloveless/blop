@@ -92,6 +92,7 @@ function editorDrawRows() {
   while (y < e.screenRows) {
     abAppend("~");
 
+    abAppend("\x1b[K");
     if (y < e.screenRows - 1) {
       abAppend("\r\n");
     }
@@ -103,7 +104,6 @@ function editorRefreshScreen() {
   //resetScreen();
   
   abAppend("\x1b[?25l");
-  abAppend("\x1b[2J");
   abAppend("\x1b[H");
 
   editorDrawRows();
