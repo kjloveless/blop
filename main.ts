@@ -7,6 +7,8 @@ const cbreak = true;
 let bytesWritten = 0;
 
 interface EditorConfig {
+  cursorX: number;
+  cursorY: number;
   screenRows: number;
   screenCols: number;
 }
@@ -123,11 +125,31 @@ function editorRefreshScreen() {
 
   editorDrawRows();
 
-  abAppend("\x1b[H");
+  const cursorPosition: string = `\x1b[${e.cursorY};${e.cursorX}H`;
+  abAppend(cursorPosition);
+
   abAppend("\x1b[?25h");
 
   write(appendBuffer, true);
   abFree();
+}
+
+function editorMoveCursor(key: string | number) {
+  console.log(key);
+  switch (key) {
+    case 'a'.charCodeAt(0):
+      e.cursorX--;
+      break;
+    case 'd'.charCodeAt(0):
+      e.cursorX++;
+      break
+    case 'w'.charCodeAt(0):
+      e.cursorY--;
+      break;
+    case 's'.charCodeAt(0):
+      e.cursorY++;
+      break;
+  }
 }
 
 function editorProcessKeypress() {
@@ -136,6 +158,13 @@ function editorProcessKeypress() {
   switch (char) {
     case ctrlKey('q'):
       exit('q->exit');
+      break;
+
+    case 'w'.charCodeAt(0):
+    case 's'.charCodeAt(0):
+    case 'a'.charCodeAt(0):
+    case 'd'.charCodeAt(0):
+      editorMoveCursor(char);
       break;
   }
 }
@@ -158,6 +187,9 @@ function ctrlKey(key: number | string): number {
 }
 
 function initEditor() {
+  e.cursorX = 0;
+  e.cursorY = 0;
+
   const { columns, rows } = getWindowSize();
   e.screenRows = rows;
   e.screenCols = columns;
