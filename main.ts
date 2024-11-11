@@ -170,19 +170,26 @@ function editorRefreshScreen() {
 }
 
 function editorMoveCursor(key: string | number) {
-  console.log(key);
   switch (key) {
     case EditorKey.ARROW_LEFT:
-      e.cursorX--;
+      if (e.cursorX != 0) {
+        e.cursorX--;
+      }
       break;
     case EditorKey.ARROW_RIGHT:
-      e.cursorX++;
-      break
+      if (e.cursorX != e.screenCols - 1) {
+        e.cursorX++;
+      }
+      break;
     case EditorKey.ARROW_UP:
-      e.cursorY--;
+      if (e.cursorY != 0) {
+        e.cursorY--;
+      }
       break;
     case EditorKey.ARROW_DOWN:
-      e.cursorY++;
+      if (e.cursorY != e.screenRows - 1) {
+        e.cursorY++;
+      }
       break;
   }
 }
