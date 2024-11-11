@@ -49,6 +49,25 @@ function editorReadKey(): number {
   return buffer[0];
 }
 
+function getCursorPosition(): boolean {
+  const buffer = new Uint8Array(32);
+  let i = 0;
+
+  write("\x1b[6n");
+
+  while (i < buffer.length - 1) {
+    Deno.stdin.read(buffer);
+    const data = decoder.decode(buffer);
+    if (data[i] == 'R') break;
+    i++;
+  }
+
+  if (buffer[0] != '\x1b' || buffer[1] != '[') return false;
+  write(buffer);
+
+  return true;
+}
+
 function getWindowSize() {
   const { columns, rows } = Deno.consoleSize();
   return { columns, rows };
