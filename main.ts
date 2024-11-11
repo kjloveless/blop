@@ -1,3 +1,5 @@
+const VERSION: string = "0.0.1";
+
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
 
@@ -90,7 +92,21 @@ function resetScreen() {
 function editorDrawRows() {
   let y = 0;
   while (y < e.screenRows) {
-    abAppend("~");
+    if (y == Math.floor(e.screenRows / 3)) {
+      const welcome = `editor -- version ${VERSION}`;
+      let padding = Math.floor((e.screenCols - welcome.length) / 2);
+      if (padding > 0 ) {
+        abAppend("~");
+        padding--;
+      }
+      while (padding > 0) {
+        abAppend(" ");
+        padding--;
+      }
+      abAppend(welcome);
+    } else {
+      abAppend("~");
+    }
 
     abAppend("\x1b[K");
     if (y < e.screenRows - 1) {
