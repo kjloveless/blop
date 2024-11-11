@@ -13,6 +13,13 @@ interface EditorConfig {
   screenCols: number;
 }
 
+enum EditorKey {
+  ARROW_LEFT  = 1000,
+  ARROW_RIGHT,
+  ARROW_UP,
+  ARROW_DOWN,
+}
+
 const e: EditorConfig = {};
 let appendBuffer: string = "";
 
@@ -59,7 +66,35 @@ function editorReadKey(): number {
   while (bytesRead != 1) {
     bytesRead = Deno.stdin.readSync(buffer);
   }
-  return buffer[0];
+
+  const buff = decoder.decode(buffer);
+  if (buff[0] == '\x1b') {
+    const sequence = new Uint8Array(3);
+
+    bytesRead = Deno.stdin.readSync(sequence);
+
+    const seq = decoder.decode(sequence);
+    if(seq[0] == '[') {
+      switch (seq[1]) {
+        case 'A':
+          return EditorKey.ARROW_UP;
+          break;
+        case 'B':
+          return EditorKey.ARROW_DOWN;
+          break;
+        case 'C':
+          return EditorKey.ARROW_RIGHT;
+          break;
+        case 'D':
+          return EditorKey.ARROW_LEFT
+          break;
+      }
+    }
+
+    return 0x1b;
+  } else {
+    return buffer[0];
+  }
 }
 
 function getCursorPosition(): boolean {
@@ -137,16 +172,16 @@ function editorRefreshScreen() {
 function editorMoveCursor(key: string | number) {
   console.log(key);
   switch (key) {
-    case 'a'.charCodeAt(0):
+    case EditorKey.ARROW_LEFT:
       e.cursorX--;
       break;
-    case 'd'.charCodeAt(0):
+    case EditorKey.ARROW_RIGHT:
       e.cursorX++;
       break
-    case 'w'.charCodeAt(0):
+    case EditorKey.ARROW_UP:
       e.cursorY--;
       break;
-    case 's'.charCodeAt(0):
+    case EditorKey.ARROW_DOWN:
       e.cursorY++;
       break;
   }
@@ -160,10 +195,10 @@ function editorProcessKeypress() {
       exit('q->exit');
       break;
 
-    case 'w'.charCodeAt(0):
-    case 's'.charCodeAt(0):
-    case 'a'.charCodeAt(0):
-    case 'd'.charCodeAt(0):
+    case EditorKey.ARROW_UP:
+    case EditorKey.ARROW_DOWN:
+    case EditorKey.ARROW_LEFT:
+    case EditorKey.ARROW_RIGHT:
       editorMoveCursor(char);
       break;
   }
