@@ -11,6 +11,8 @@ interface EditorConfig {
   cursorY: number;
   screenRows: number;
   screenCols: number;
+  numRows: number;
+  row: string;
 }
 
 enum EditorKey {
@@ -18,6 +20,7 @@ enum EditorKey {
   ARROW_RIGHT,
   ARROW_UP,
   ARROW_DOWN,
+  DEL_KEY,
   HOME_KEY,
   END_KEY,
   PAGE_UP,
@@ -84,6 +87,9 @@ function editorReadKey(): number {
           switch (seq[1]) {
             case '1':
               return EditorKey.HOME_KEY;
+              break;
+            case '3':
+              return EditorKey.DEL_KEY;
               break;
             case '4':
               return EditorKey.END_KEY;
@@ -164,6 +170,16 @@ function getWindowSize() {
   return { columns, rows };
 }
 
+function editorOpen(filename: string) {
+  const data = Deno.readFileSync(filename);
+  const contents = decoder.decode(data);
+
+  console.log(contents);
+  Deno.exit();
+  e.row = contents;
+  e.numRows++;
+}
+
 function resetScreen() {
   write("\x1b[2J", true);
   write("\x1b[H", true);
@@ -172,19 +188,27 @@ function resetScreen() {
 function editorDrawRows() {
   let y = 0;
   while (y < e.screenRows) {
-    if (y == Math.floor(e.screenRows / 3)) {
-      const welcome = `editor -- version ${VERSION}`;
-      let padding = Math.floor((e.screenCols - welcome.length) / 2);
-      if (padding > 0 ) {
+    if (y >= e.numRows) {
+      if (y == Math.floor(e.screenRows / 3)) {
+        const welcome = `editor -- version ${VERSION}`;
+        let padding = Math.floor((e.screenCols - welcome.length) / 2);
+        if (padding > 0 ) {
+          abAppend("~");
+          padding--;
+        }
+        while (padding--) {
+          abAppend(" ");
+        }
+        abAppend(welcome);
+      } else {
         abAppend("~");
-        padding--;
       }
-      while (padding--) {
-        abAppend(" ");
-      }
-      abAppend(welcome);
     } else {
-      abAppend("~");
+      let len = e.row.length;
+      if (len > e.screenCols) {
+        len = e.screenCols;
+      }
+      abAppend(e.row);
     }
 
     abAppend("\x1b[K");
@@ -290,6 +314,7 @@ function ctrlKey(key: number | string): number {
 function initEditor() {
   e.cursorX = 0;
   e.cursorY = 0;
+  e.numRows = 0;
 
   const { columns, rows } = getWindowSize();
   e.screenRows = rows;
@@ -299,6 +324,9 @@ function initEditor() {
 if (import.meta.main) {
   enableRawMode();
   initEditor();
+  if (Deno.args.length > 0) {
+    editorOpen(Deno.args[0]);
+  }
 
   while(true) {
     editorRefreshScreen();
