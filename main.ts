@@ -99,9 +99,8 @@ function editorDrawRows() {
         abAppend("~");
         padding--;
       }
-      while (padding > 0) {
+      while (padding--) {
         abAppend(" ");
-        padding--;
       }
       abAppend(welcome);
     } else {
