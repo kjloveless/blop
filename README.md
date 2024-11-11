@@ -2,3 +2,6 @@
 
 #### clone the dir, cd into it, run `deno run main.ts`
 #### press ctrl+q to exit
+
+
+look ma, no c!
