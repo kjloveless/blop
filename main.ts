@@ -360,7 +360,9 @@ function editorProcessKeypress() {
       break;
 
     case EditorKey.END_KEY:
-      e.cursorX = e.screenCols - 1;
+      if (e.cursorY < e.numRows) {
+        e.cursorX = e.row[e.cursorY].length;
+      }
       break;
 
     case EditorKey.PAGE_UP:
