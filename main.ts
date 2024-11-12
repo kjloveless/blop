@@ -12,7 +12,7 @@ interface EditorConfig {
   screenRows: number;
   screenCols: number;
   numRows: number;
-  row: string;
+  row: string[];
 }
 
 enum EditorKey {
@@ -170,12 +170,22 @@ function getWindowSize() {
   return { columns, rows };
 }
 
+function editorAppendRow(msg: string) {
+  const at = e.numRows;
+  e.row[at] = msg;
+  e.numRows++;
+}
+
 function editorOpen(filename: string) {
   const data = Deno.readFileSync(filename);
   const contents = decoder.decode(data).trimEnd();
+  const lines = contents.split("\n");
 
-  e.row = contents;
-  e.numRows++;
+  let i = 0;
+  while (i < lines.length) {
+    editorAppendRow(lines[i]);
+    i++;
+  }
 }
 
 function resetScreen() {
@@ -202,11 +212,7 @@ function editorDrawRows() {
         abAppend("~");
       }
     } else {
-      let len = e.row.length;
-      if (len > e.screenCols) {
-        len = e.screenCols;
-      }
-      abAppend(e.row);
+      abAppend(e.row[y]);
     }
 
     abAppend("\x1b[K");
@@ -313,6 +319,7 @@ function initEditor() {
   e.cursorX = 0;
   e.cursorY = 0;
   e.numRows = 0;
+  e.row = [];
 
   const { columns, rows } = getWindowSize();
   e.screenRows = rows;
