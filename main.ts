@@ -266,6 +266,7 @@ function editorRefreshScreen() {
 }
 
 function editorMoveCursor(key: string | number) {
+  let row = (e.cursorY >= e.numRows) ? "" : e.row[e.cursorY];
   switch (key) {
     case EditorKey.ARROW_LEFT:
       if (e.cursorX != 0) {
@@ -273,7 +274,9 @@ function editorMoveCursor(key: string | number) {
       }
       break;
     case EditorKey.ARROW_RIGHT:
-      e.cursorX++;
+      if (row != "" && e.cursorX < row.length) {
+        e.cursorX++;
+      }
       break;
     case EditorKey.ARROW_UP:
       if (e.cursorY != 0) {
@@ -285,6 +288,12 @@ function editorMoveCursor(key: string | number) {
         e.cursorY++;
       }
       break;
+  }
+
+  row = (e.cursorY >= e.numRows) ? "" : e.row[e.cursorY];
+  const rowLen = row != "" ? row.length : 0;
+  if (e.cursorX > rowLen) {
+    e.cursorX = rowLen;
   }
 }
 
