@@ -10,6 +10,7 @@ interface EditorConfig {
   cursorX: number;
   cursorY: number;
   rowOffset: number;
+  colOffset: number;
   screenRows: number;
   screenCols: number;
   numRows: number;
@@ -201,6 +202,12 @@ function editorScroll() {
   if (e.cursorY >= e.rowOffset + e.screenRows) {
     e.rowOffset = e.cursorY - e.screenRows + 1;
   }
+  if (e.cursorX < e.colOffset) {
+    e.colOffset = e.cursorX;
+  }
+  if (e.cursorX >= e.colOffset + e.screenCols) {
+    e.colOffset = e.cursorX - e.screenCols + 1;
+  }
 }
 
 function editorDrawRows() {
@@ -223,7 +230,12 @@ function editorDrawRows() {
         abAppend("~");
       }
     } else {
-      abAppend(e.row[fileRow]);
+      let len = e.row[fileRow].length - e.colOffset;
+      if (len < 0) len = 0;
+      if (len > e.screenCols) len = e.screenCols;
+      if (len > 0) {
+        abAppend(e.row[fileRow].slice(e.colOffset, e.colOffset + len));
+      }
     }
 
     abAppend("\x1b[K");
@@ -243,7 +255,7 @@ function editorRefreshScreen() {
   editorDrawRows();
 
   const yPos = `${(e.cursorY - e.rowOffset) + 1}`;
-  const xPos = `${e.cursorX + 1}`;
+  const xPos = `${(e.cursorX - e.colOffset) + 1}`;
   const cursorPosition: string = `\x1b[${yPos};${xPos}H`;
   abAppend(cursorPosition);
 
@@ -261,9 +273,7 @@ function editorMoveCursor(key: string | number) {
       }
       break;
     case EditorKey.ARROW_RIGHT:
-      if (e.cursorX != e.screenCols - 1) {
-        e.cursorX++;
-      }
+      e.cursorX++;
       break;
     case EditorKey.ARROW_UP:
       if (e.cursorY != 0) {
@@ -332,6 +342,7 @@ function initEditor() {
   e.cursorX = 0;
   e.cursorY = 0;
   e.rowOffset = 0;
+  e.colOffset = 0;
   e.numRows = 0;
   e.row = [];
 
