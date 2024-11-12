@@ -9,6 +9,7 @@ let bytesWritten = 0;
 interface EditorConfig {
   cursorX: number;
   cursorY: number;
+  rowOffset: number;
   screenRows: number;
   screenCols: number;
   numRows: number;
@@ -193,10 +194,20 @@ function resetScreen() {
   write("\x1b[H", true);
 }
 
+function editorScroll() {
+  if (e.cursorY < e.rowOffset) {
+    e.rowOffset = e.cursorY;
+  }
+  if (e.cursorY >= e.rowOffset + e.screenRows) {
+    e.rowOffset = e.cursorY - e.screenRows + 1;
+  }
+}
+
 function editorDrawRows() {
   let y = 0;
   while (y < e.screenRows) {
-    if (y >= e.numRows) {
+    const fileRow = y + e.rowOffset;
+    if (fileRow >= e.numRows) {
       if (e.numRows == 0 && y == Math.floor(e.screenRows / 3)) {
         const welcome = `editor -- version ${VERSION}`;
         let padding = Math.floor((e.screenCols - welcome.length) / 2);
@@ -212,7 +223,7 @@ function editorDrawRows() {
         abAppend("~");
       }
     } else {
-      abAppend(e.row[y]);
+      abAppend(e.row[fileRow]);
     }
 
     abAppend("\x1b[K");
@@ -224,14 +235,16 @@ function editorDrawRows() {
 }
 
 function editorRefreshScreen() {
-  //resetScreen();
+  editorScroll();
   
   abAppend("\x1b[?25l");
   abAppend("\x1b[H");
 
   editorDrawRows();
 
-  const cursorPosition: string = `\x1b[${e.cursorY};${e.cursorX}H`;
+  const yPos = `${(e.cursorY - e.rowOffset) + 1}`;
+  const xPos = `${e.cursorX + 1}`;
+  const cursorPosition: string = `\x1b[${yPos};${xPos}H`;
   abAppend(cursorPosition);
 
   abAppend("\x1b[?25h");
@@ -258,7 +271,7 @@ function editorMoveCursor(key: string | number) {
       }
       break;
     case EditorKey.ARROW_DOWN:
-      if (e.cursorY != e.screenRows - 1) {
+      if (e.cursorY < e.numRows) {
         e.cursorY++;
       }
       break;
@@ -318,6 +331,7 @@ function ctrlKey(key: number | string): number {
 function initEditor() {
   e.cursorX = 0;
   e.cursorY = 0;
+  e.rowOffset = 0;
   e.numRows = 0;
   e.row = [];
 
