@@ -1,4 +1,8 @@
 const VERSION: string = "0.0.1";
+const TAB_STOP: number = 8;
+
+    let test = 123;
+  const omg: string = "wtf";
 
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
@@ -9,12 +13,14 @@ let bytesWritten = 0;
 interface EditorConfig {
   cursorX: number;
   cursorY: number;
+  renderX: number;
   rowOffset: number;
   colOffset: number;
   screenRows: number;
   screenCols: number;
   numRows: number;
   row: string[];
+  render: string[];
 }
 
 enum EditorKey {
@@ -148,6 +154,8 @@ function editorReadKey(): number {
   }
 }
 
+// TODO: gonna see if i end up needing this... it's not fully implemented
+// either
 function getCursorPosition(): boolean {
   const buffer = new Uint8Array(32);
   let i = 0;
@@ -172,15 +180,46 @@ function getWindowSize() {
   return { columns, rows };
 }
 
+function editorRowCursorXtoRenderX(cursorX: number): number {
+  let renderX = 0;
+  let i = 0;
+
+  while (i < cursorX) {
+    if (e.row[e.cursorY][i] == '\t') {
+      renderX += (TAB_STOP - 1) - (renderX % TAB_STOP);
+    }
+    renderX++;
+    i++;
+  }
+
+  return renderX;
+}
+
+function editorUpdateRow(at: number) {
+  let i = 0;
+  e.render[at] = "";
+  while (i < e.row[at].length) {
+    if (e.row[at] == '\t') {
+      e.render[at] = ' ' * TAB_STOP;
+    } else {
+      e.render[at] += e.row[at][i];
+    }
+    i++;
+  }
+}
+
 function editorAppendRow(msg: string) {
   const at = e.numRows;
   e.row[at] = msg;
+
+  editorUpdateRow(at);
+
   e.numRows++;
 }
 
 function editorOpen(filename: string) {
   const data = Deno.readFileSync(filename);
-  const contents = decoder.decode(data).trimEnd();
+  const contents = decoder.decode(data).replaceAll("\r", "").trimEnd();
   const lines = contents.split("\n");
 
   let i = 0;
@@ -196,23 +235,29 @@ function resetScreen() {
 }
 
 function editorScroll() {
+  e.renderX = 0;
+  if (e.cursorY < e.numRows) {
+    e.renderX = editorRowCursorXtoRenderX(e.cursorX);
+  }
+
   if (e.cursorY < e.rowOffset) {
     e.rowOffset = e.cursorY;
   }
   if (e.cursorY >= e.rowOffset + e.screenRows) {
     e.rowOffset = e.cursorY - e.screenRows + 1;
   }
-  if (e.cursorX < e.colOffset) {
-    e.colOffset = e.cursorX;
+  if (e.renderX < e.colOffset) {
+    e.colOffset = e.renderX;
   }
-  if (e.cursorX >= e.colOffset + e.screenCols) {
-    e.colOffset = e.cursorX - e.screenCols + 1;
+  if (e.renderX >= e.colOffset + e.screenCols) {
+    e.colOffset = e.renderX - e.screenCols + 1;
   }
 }
 
 function editorDrawRows() {
   let y = 0;
   while (y < e.screenRows) {
+    abAppend("\x1b[K");
     const fileRow = y + e.rowOffset;
     if (fileRow >= e.numRows) {
       if (e.numRows == 0 && y == Math.floor(e.screenRows / 3)) {
@@ -238,7 +283,6 @@ function editorDrawRows() {
       }
     }
 
-    abAppend("\x1b[K");
     if (y < e.screenRows - 1) {
       abAppend("\r\n");
     }
@@ -255,7 +299,7 @@ function editorRefreshScreen() {
   editorDrawRows();
 
   const yPos = `${(e.cursorY - e.rowOffset) + 1}`;
-  const xPos = `${(e.cursorX - e.colOffset) + 1}`;
+  const xPos = `${(e.renderX - e.colOffset) + 1}`;
   const cursorPosition: string = `\x1b[${yPos};${xPos}H`;
   abAppend(cursorPosition);
 
@@ -356,10 +400,12 @@ function ctrlKey(key: number | string): number {
 function initEditor() {
   e.cursorX = 0;
   e.cursorY = 0;
+  e.renderX = 0;
   e.rowOffset = 0;
   e.colOffset = 0;
   e.numRows = 0;
   e.row = [];
+  e.render = [];
 
   const { columns, rows } = getWindowSize();
   e.screenRows = rows;
