@@ -365,6 +365,15 @@ function editorProcessKeypress() {
 
     case EditorKey.PAGE_UP:
     case EditorKey.PAGE_DOWN:
+      if (char == EditorKey.PAGE_UP) {
+        e.cursorY = e.rowOffset;
+      } else if (char == EditorKey.PAGE_DOWN) {
+        e.cursorY = e.rowOffset + e.screenRows - 1;
+        if (e.cursorY > e.numRows) {
+          e.cursorY = e.numRows;
+        }
+      }
+
       let times = e.screenRows;
       while (times--) {
         editorMoveCursor(char == EditorKey.PAGE_UP ? EditorKey.ARROW_UP : EditorKey.ARROW_DOWN);
