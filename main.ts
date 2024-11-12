@@ -172,10 +172,8 @@ function getWindowSize() {
 
 function editorOpen(filename: string) {
   const data = Deno.readFileSync(filename);
-  const contents = decoder.decode(data);
+  const contents = decoder.decode(data).trimEnd();
 
-  console.log(contents);
-  Deno.exit();
   e.row = contents;
   e.numRows++;
 }
@@ -189,7 +187,7 @@ function editorDrawRows() {
   let y = 0;
   while (y < e.screenRows) {
     if (y >= e.numRows) {
-      if (y == Math.floor(e.screenRows / 3)) {
+      if (e.numRows == 0 && y == Math.floor(e.screenRows / 3)) {
         const welcome = `editor -- version ${VERSION}`;
         let padding = Math.floor((e.screenCols - welcome.length) / 2);
         if (padding > 0 ) {
