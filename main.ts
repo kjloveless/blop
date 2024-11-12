@@ -266,16 +266,22 @@ function editorRefreshScreen() {
 }
 
 function editorMoveCursor(key: string | number) {
-  let row = (e.cursorY >= e.numRows) ? "" : e.row[e.cursorY];
+  let row = (e.cursorY >= e.numRows) ? undefined : e.row[e.cursorY];
   switch (key) {
     case EditorKey.ARROW_LEFT:
       if (e.cursorX != 0) {
         e.cursorX--;
+      } else if (e.cursorY > 0) {
+        e.cursorY--;
+        e.cursorX = e.row[e.cursorY].length;
       }
       break;
     case EditorKey.ARROW_RIGHT:
-      if (row != "" && e.cursorX < row.length) {
+      if (row != undefined && e.cursorX < row.length) {
         e.cursorX++;
+      } else if (row != undefined && e.cursorX == row.length) {
+        e.cursorY++;
+        e.cursorX = 0;
       }
       break;
     case EditorKey.ARROW_UP:
@@ -290,8 +296,8 @@ function editorMoveCursor(key: string | number) {
       break;
   }
 
-  row = (e.cursorY >= e.numRows) ? "" : e.row[e.cursorY];
-  const rowLen = row != "" ? row.length : 0;
+  row = (e.cursorY >= e.numRows) ? undefined : e.row[e.cursorY];
+  const rowLen = row != undefined ? row.length : 0;
   if (e.cursorX > rowLen) {
     e.cursorX = rowLen;
   }
