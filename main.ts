@@ -24,6 +24,7 @@ interface EditorConfig {
 }
 
 enum EditorKey {
+  BACKSPACE = 127,
   ARROW_LEFT = 1000,
   ARROW_RIGHT,
   ARROW_UP,
@@ -397,6 +398,9 @@ function editorProcessKeypress() {
   const char = editorReadKey();
 
   switch (char) {
+    case '\r'.charCodeAt(0):
+      // TODO
+      break;
     case ctrlKey("q"):
       exit("ciao, ciao");
       break;
@@ -409,6 +413,12 @@ function editorProcessKeypress() {
       if (e.cursorY < e.numRows) {
         e.cursorX = e.row[e.cursorY].length;
       }
+      break;
+
+    case EditorKey.BACKSPACE:
+    case EditorKey.DEL_KEY:
+    case ctrlKey('h'):
+      // TODO
       break;
 
     case EditorKey.PAGE_UP:
@@ -436,6 +446,10 @@ function editorProcessKeypress() {
     case EditorKey.ARROW_LEFT:
     case EditorKey.ARROW_RIGHT:
       editorMoveCursor(char);
+      break;
+
+    case ctrlKey('l'):
+    case 0x1b:
       break;
 
     default:
