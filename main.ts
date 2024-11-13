@@ -48,8 +48,10 @@ function abFree() {
 
 function exit(msg: string, code: number = 0) {
   resetScreen();
-
-  console.log(`${bytesWritten} bytes written this session!\r\n${msg}\r\n`);
+  
+  // TODO: fix how bytes are being accumulated
+  // console.log(`${bytesWritten} bytes written this session!\r\n${msg}\r\n`);
+  console.log(`${msg}\r\n`);
 
   Deno.stdin.close();
   Deno.stdout.close();
@@ -203,6 +205,21 @@ function editorAppendRow(msg: string) {
   editorUpdateRow(at);
 
   e.numRows++;
+}
+
+function editorRowInsertChar(row: number, at: number, char: string) {
+  if (at < 0 || at > e.row[row].length) at = e.row[row].length;
+
+  e.row[row] = e.row[row].substring(0, at) + char + e.row[row].substring(at + 1);
+  editorUpdateRow(row);
+}
+
+function editorInsertChar(char: string) {
+  if (e.cursorY == e.numRows) {
+    editorAppendRow("");
+  }
+  editorRowInsertChar(e.cursorY, e.cursorX, char);
+  e.cursorX++;
 }
 
 function editorOpen(filename: string) {
@@ -419,6 +436,10 @@ function editorProcessKeypress() {
     case EditorKey.ARROW_LEFT:
     case EditorKey.ARROW_RIGHT:
       editorMoveCursor(char);
+      break;
+
+    default:
+      editorInsertChar(String.fromCharCode(char));
       break;
   }
 }
