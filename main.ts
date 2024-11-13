@@ -21,6 +21,7 @@ interface EditorConfig {
   numRows: number;
   row: string[];
   render: string[];
+  filename: string;
 }
 
 enum EditorKey {
@@ -218,6 +219,7 @@ function editorAppendRow(msg: string) {
 }
 
 function editorOpen(filename: string) {
+  e.filename = filename;
   const data = Deno.readFileSync(filename);
   const contents = decoder.decode(data).replaceAll("\r", "").trimEnd();
   const lines = contents.split("\n");
@@ -283,11 +285,30 @@ function editorDrawRows() {
       }
     }
 
-    if (y < e.screenRows - 1) {
-      abAppend("\r\n");
-    }
+    abAppend("\r\n");
     y++;
   }
+}
+
+function editorDrawStatusBar() {
+  abAppend("\x1b[7m");
+
+  const status = `${e.filename != "" ? e.filename : "[No Name]"} - ${e.numRows} lines`;
+  abAppend(status);
+
+  const rStatus = `${e.cursorY + 1}/${e.numRows}`;
+
+  let len = status.length;
+  while (len < e.screenCols) {
+    if (e.screenCols - len == rStatus.length) {
+      abAppend(rStatus);
+      break;
+    } else {
+      abAppend(" ");
+      len++;
+    }
+  }
+  abAppend("\x1b[m");
 }
 
 function editorRefreshScreen() {
@@ -297,6 +318,7 @@ function editorRefreshScreen() {
   abAppend("\x1b[H");
 
   editorDrawRows();
+  editorDrawStatusBar();
 
   const yPos = `${(e.cursorY - e.rowOffset) + 1}`;
   const xPos = `${(e.renderX - e.colOffset) + 1}`;
@@ -417,9 +439,10 @@ function initEditor() {
   e.numRows = 0;
   e.row = [];
   e.render = [];
+  e.filename = "";
 
   const { columns, rows } = getWindowSize();
-  e.screenRows = rows;
+  e.screenRows = rows - 1;
   e.screenCols = columns;
 }
 
