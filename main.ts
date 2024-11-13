@@ -1,9 +1,6 @@
 const VERSION: string = "0.0.1";
 const TAB_STOP: number = 8;
 
-    let test = 123;
-  const omg: string = "wtf";
-
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
 
@@ -27,7 +24,7 @@ interface EditorConfig {
 }
 
 enum EditorKey {
-  ARROW_LEFT  = 1000,
+  ARROW_LEFT = 1000,
   ARROW_RIGHT,
   ARROW_UP,
   ARROW_DOWN,
@@ -38,7 +35,7 @@ enum EditorKey {
   PAGE_DOWN,
 }
 
-const e: EditorConfig = {};
+let e: EditorConfig;
 let appendBuffer: string = "";
 
 function abAppend(msg: string) {
@@ -62,17 +59,17 @@ function exit(msg: string, code: number = 0) {
 
 function enableRawMode() {
   // TODO: move cbreak config to .env
-  if (cbreak) console.log('signal breaking is on');
-  if (Deno.stdin.isTerminal) {
-    Deno.stdin.setRaw(true, {cbreak});
+  if (cbreak) console.log("signal breaking is on");
+  if (Deno.stdin.isTerminal()) {
+    Deno.stdin.setRaw(true, { cbreak });
   } else {
-    console.error('please run me in a terminal');
+    console.error("please run me in a terminal");
     exit("error: enableRawMode() not a terminal", -1);
   }
 }
 
 // pretty sure Deno disables raw mode, but we like safety
-function disableRawMode() {
+function _disableRawMode() {
   Deno.stdin.setRaw(false);
 }
 
@@ -82,72 +79,58 @@ function editorReadKey(): number {
   let bytesRead: number = 0;
 
   while (bytesRead != 1) {
-    bytesRead = Deno.stdin.readSync(buffer);
+    bytesRead += Deno.stdin.readSync(buffer) ?? 0;
   }
 
   const buff = decoder.decode(buffer);
-  if (buff[0] == '\x1b') {
+  if (buff[0] == "\x1b") {
     const sequence = new Uint8Array(3);
 
-    bytesRead = Deno.stdin.readSync(sequence);
+    bytesRead += Deno.stdin.readSync(sequence) ?? 0;
 
     const seq = decoder.decode(sequence);
-    if(seq[0] == '[') {
-      if (seq[1] >= '0' && seq[1] <= '9') {
-        if (seq[2] == '~') {
+    if (seq[0] == "[") {
+      if (seq[1] >= "0" && seq[1] <= "9") {
+        if (seq[2] == "~") {
           switch (seq[1]) {
-            case '1':
+            case "1":
               return EditorKey.HOME_KEY;
-              break;
-            case '3':
+            case "3":
               return EditorKey.DEL_KEY;
-              break;
-            case '4':
+            case "4":
               return EditorKey.END_KEY;
-              break;
-            case '5':
+            case "5":
               return EditorKey.PAGE_UP;
-              break;
-            case '6':
+            case "6":
               return EditorKey.PAGE_DOWN;
-              break;
-            case '7':
+            case "7":
               return EditorKey.HOME_KEY;
-              break;
-            case '8':
+            case "8":
               return EditorKey.END_KEY;
-              break;
           }
         }
       } else {
         switch (seq[1]) {
-          case 'A':
+          case "A":
             return EditorKey.ARROW_UP;
-            break;
-          case 'B':
+          case "B":
             return EditorKey.ARROW_DOWN;
-            break;
-          case 'C':
+          case "C":
             return EditorKey.ARROW_RIGHT;
-            break;
-          case 'D':
-            return EditorKey.ARROW_LEFT
-            break;
-          case 'H':
+          case "D":
+            return EditorKey.ARROW_LEFT;
+          case "H":
             return EditorKey.HOME_KEY;
-            break;
-          case 'F':
+          case "F":
             return EditorKey.END_KEY;
         }
       }
-    } else if (seq[0] == 'O') {
+    } else if (seq[0] == "O") {
       switch (seq[1]) {
-        case 'H':
+        case "H":
           return EditorKey.HOME_KEY;
-          break;
-        case 'F':
+        case "F":
           return EditorKey.END_KEY;
-          break;
       }
     }
 
@@ -159,7 +142,7 @@ function editorReadKey(): number {
 
 // TODO: gonna see if i end up needing this... it's not fully implemented
 // either
-function getCursorPosition(): boolean {
+function _getCursorPosition(): boolean {
   const buffer = new Uint8Array(32);
   let i = 0;
 
@@ -168,11 +151,13 @@ function getCursorPosition(): boolean {
   while (i < buffer.length - 1) {
     Deno.stdin.read(buffer);
     const data = decoder.decode(buffer);
-    if (data[i] == 'R') break;
+    if (data[i] == "R") break;
     i++;
   }
 
-  if (buffer[0] != '\x1b' || buffer[1] != '[') return false;
+  if (buffer[0] != "\x1b".charCodeAt(0) || buffer[1] != "[".charCodeAt(0)) {
+    return false;
+  }
   write(buffer);
 
   return true;
@@ -188,7 +173,7 @@ function editorRowCursorXtoRenderX(cursorX: number): number {
   let i = 0;
 
   while (i < cursorX) {
-    if (e.row[e.cursorY][i] == '\t') {
+    if (e.row[e.cursorY][i] == "\t") {
       renderX += (TAB_STOP - 1) - (renderX % TAB_STOP);
     }
     renderX++;
@@ -202,8 +187,8 @@ function editorUpdateRow(at: number) {
   let i = 0;
   e.render[at] = "";
   while (i < e.row[at].length) {
-    if (e.row[at] == '\t') {
-      e.render[at] = ' ' * TAB_STOP;
+    if (e.row[at] == "\t") {
+      e.render[at] = " ".repeat(TAB_STOP);
     } else {
       e.render[at] += e.row[at][i];
     }
@@ -221,6 +206,7 @@ function editorAppendRow(msg: string) {
 }
 
 function editorOpen(filename: string) {
+  console.log(`filename: ${filename}`);
   e.filename = filename;
   const data = Deno.readFileSync(filename);
   const contents = decoder.decode(data).replaceAll("\r", "").trimEnd();
@@ -267,7 +253,7 @@ function editorDrawRows() {
       if (e.numRows == 0 && y == Math.floor(e.screenRows / 3)) {
         const welcome = `editor -- version ${VERSION}`;
         let padding = Math.floor((e.screenCols - welcome.length) / 2);
-        if (padding > 0 ) {
+        if (padding > 0) {
           abAppend("~");
           padding--;
         }
@@ -295,7 +281,9 @@ function editorDrawRows() {
 function editorDrawStatusBar() {
   abAppend("\x1b[7m");
 
-  const status = `${e.filename != "" ? e.filename : "[No Name]"} - ${e.numRows} lines`;
+  const status = `${
+    e.filename != "" ? e.filename : "[No Name]"
+  } - ${e.numRows} lines`;
   abAppend(status);
 
   const rStatus = `${e.cursorY + 1}/${e.numRows}`;
@@ -316,14 +304,17 @@ function editorDrawStatusBar() {
 
 function editorDrawMessageBar() {
   abAppend("\x1b[K");
-  if ((e.statusMsg.length > 0) && ((Date.now() - e.statusMsgTime) < 5000)) {
+  if (
+    (e.statusMsg.length > 0) &&
+    ((new Date().getTime() - e.statusMsgTime.getTime()) < 5000)
+  ) {
     abAppend(e.statusMsg);
   }
 }
 
 function editorRefreshScreen() {
   editorScroll();
-  
+
   abAppend("\x1b[?25l");
   abAppend("\x1b[H");
 
@@ -389,8 +380,8 @@ function editorProcessKeypress() {
   const char = editorReadKey();
 
   switch (char) {
-    case ctrlKey('q'):
-      exit('ciao, ciao');
+    case ctrlKey("q"):
+      exit("ciao, ciao");
       break;
 
     case EditorKey.HOME_KEY:
@@ -404,7 +395,7 @@ function editorProcessKeypress() {
       break;
 
     case EditorKey.PAGE_UP:
-    case EditorKey.PAGE_DOWN:
+    case EditorKey.PAGE_DOWN: {
       if (char == EditorKey.PAGE_UP) {
         e.cursorY = e.rowOffset;
       } else if (char == EditorKey.PAGE_DOWN) {
@@ -416,9 +407,12 @@ function editorProcessKeypress() {
 
       let times = e.screenRows;
       while (times--) {
-        editorMoveCursor(char == EditorKey.PAGE_UP ? EditorKey.ARROW_UP : EditorKey.ARROW_DOWN);
+        editorMoveCursor(
+          char == EditorKey.PAGE_UP ? EditorKey.ARROW_UP : EditorKey.ARROW_DOWN,
+        );
       }
       break;
+    }
 
     case EditorKey.ARROW_UP:
     case EditorKey.ARROW_DOWN:
@@ -438,8 +432,9 @@ function write(bytes: string | Uint8Array, guiBytes: boolean = false) {
   if (!guiBytes) bytesWritten += written;
 }
 
-function iscntrl(charCode: number): boolean {
-  return (charCode < 32 || charCode === 127) ? true : false; 
+// TODO: figure out if i want to keep this around
+function _iscntrl(charCode: number): boolean {
+  return (charCode < 32 || charCode === 127) ? true : false;
 }
 
 function ctrlKey(key: number | string): number {
@@ -447,35 +442,38 @@ function ctrlKey(key: number | string): number {
 }
 
 function initEditor() {
-  e.cursorX = 0;
-  e.cursorY = 0;
-  e.renderX = 0;
-  e.rowOffset = 0;
-  e.colOffset = 0;
-  e.numRows = 0;
-  e.row = [];
-  e.render = [];
-  e.filename = "";
-  e.statusMsg = "";
-
   const { columns, rows } = getWindowSize();
-  e.screenRows = rows - 2;
-  e.screenCols = columns;
+
+  e = {
+    cursorX: 0,
+    cursorY: 0,
+    renderX: 0,
+    rowOffset: 0,
+    colOffset: 0,
+    numRows: 0,
+    row: [],
+    render: [],
+    filename: "",
+    statusMsg: "",
+    screenCols: columns,
+    screenRows: rows - 2,
+    statusMsgTime: new Date(),
+  };
 }
 
 if (import.meta.main) {
   enableRawMode();
   initEditor();
-  if (Deno.args.length > 0) {
+  if (Deno.args.length === 1) {
     editorOpen(Deno.args[0]);
+  } else if (Deno.args.length === 3) {
+    editorOpen(Deno.args[2]);
   }
 
   editorSetStatusMessage("HELP: Ctrl-Q = quit");
 
-  while(true) {
+  while (true) {
     editorRefreshScreen();
     editorProcessKeypress();
   }
-
-  exit(`bye!`);
 }
