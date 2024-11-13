@@ -210,7 +210,7 @@ function editorAppendRow(msg: string) {
 function editorRowInsertChar(row: number, at: number, char: string) {
   if (at < 0 || at > e.row[row].length) at = e.row[row].length;
 
-  e.row[row] = e.row[row].substring(0, at) + char + e.row[row].substring(at + 1);
+  e.row[row] = e.row[row].slice(0, at) + char + e.row[row].slice(at);
   editorUpdateRow(row);
 }
 
