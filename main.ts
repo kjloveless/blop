@@ -22,6 +22,8 @@ interface EditorConfig {
   row: string[];
   render: string[];
   filename: string;
+  statusMsg: string;
+  statusMsgTime: Date;
 }
 
 enum EditorKey {
@@ -309,6 +311,14 @@ function editorDrawStatusBar() {
     }
   }
   abAppend("\x1b[m");
+  abAppend("\r\n");
+}
+
+function editorDrawMessageBar() {
+  abAppend("\x1b[K");
+  if ((e.statusMsg.length > 0) && ((Date.now() - e.statusMsgTime) < 5000)) {
+    abAppend(e.statusMsg);
+  }
 }
 
 function editorRefreshScreen() {
@@ -319,6 +329,7 @@ function editorRefreshScreen() {
 
   editorDrawRows();
   editorDrawStatusBar();
+  editorDrawMessageBar();
 
   const yPos = `${(e.cursorY - e.rowOffset) + 1}`;
   const xPos = `${(e.renderX - e.colOffset) + 1}`;
@@ -329,6 +340,11 @@ function editorRefreshScreen() {
 
   write(appendBuffer, true);
   abFree();
+}
+
+function editorSetStatusMessage(msg: string) {
+  e.statusMsg = msg;
+  e.statusMsgTime = new Date();
 }
 
 function editorMoveCursor(key: string | number) {
@@ -440,9 +456,10 @@ function initEditor() {
   e.row = [];
   e.render = [];
   e.filename = "";
+  e.statusMsg = "";
 
   const { columns, rows } = getWindowSize();
-  e.screenRows = rows - 1;
+  e.screenRows = rows - 2;
   e.screenCols = columns;
 }
 
@@ -452,6 +469,8 @@ if (import.meta.main) {
   if (Deno.args.length > 0) {
     editorOpen(Deno.args[0]);
   }
+
+  editorSetStatusMessage("HELP: Ctrl-Q = quit");
 
   while(true) {
     editorRefreshScreen();
