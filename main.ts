@@ -220,12 +220,29 @@ function editorRowInsertChar(row: number, at: number, char: string) {
   e.dirty++;
 }
 
+function editorRowDelChar(row: number, at: number) {
+  if (at < 0 || at >= e.row[row].length) return;
+
+  e.row[row] = e.row[row].slice(0, at) + e.row[row].slice(at + 1);
+  editorUpdateRow(row);
+  e.dirty++;
+}
+
 function editorInsertChar(char: string) {
   if (e.cursorY == e.numRows) {
     editorAppendRow("");
   }
   editorRowInsertChar(e.cursorY, e.cursorX, char);
   e.cursorX++;
+}
+
+function editorDelChar() {
+  if (e.cursorY == e.numRows) return;
+
+  if (e.cursorX > 0) {
+    editorRowDelChar(e.cursorY, e.cursorX - 1);
+    e.cursorX--;
+  }
 }
 
 function editorRowsToString(): string {
@@ -455,7 +472,8 @@ async function editorProcessKeypress() {
     case EditorKey.BACKSPACE:
     case EditorKey.DEL_KEY:
     case ctrlKey("h"):
-      // TODO
+      if (char == EditorKey.DEL_KEY) editorMoveCursor(EditorKey.ARROW_RIGHT);
+      editorDelChar();
       break;
 
     case EditorKey.PAGE_UP:
