@@ -49,7 +49,7 @@ function abFree() {
 
 function exit(msg: string, code: number = 0) {
   resetScreen();
-  
+
   // TODO: fix how bytes are being accumulated
   // console.log(`${bytesWritten} bytes written this session!\r\n${msg}\r\n`);
   console.log(`${msg}\r\n`);
@@ -223,6 +223,26 @@ function editorInsertChar(char: string) {
   e.cursorX++;
 }
 
+function editorRowsToString(): string {
+  const rows = e.row.length;
+
+  let i = 0;
+  let contents = "";
+  while (i < rows) {
+    contents += e.row[i] + "\n";
+    i++;
+  }
+
+  return contents;
+}
+
+async function editorSave() {
+  if (e.filename == "" || e.filename == undefined) return;
+
+  const data = encoder.encode(editorRowsToString());
+  await Deno.writeFile(e.filename, data, { mode: 0o644 });
+}
+
 function editorOpen(filename: string) {
   console.log(`filename: ${filename}`);
   e.filename = filename;
@@ -394,15 +414,19 @@ function editorMoveCursor(key: string | number) {
   }
 }
 
-function editorProcessKeypress() {
+async function editorProcessKeypress() {
   const char = editorReadKey();
 
   switch (char) {
-    case '\r'.charCodeAt(0):
+    case "\r".charCodeAt(0):
       // TODO
       break;
     case ctrlKey("q"):
       exit("ciao, ciao");
+      break;
+
+    case ctrlKey("s"):
+      await editorSave();
       break;
 
     case EditorKey.HOME_KEY:
@@ -417,7 +441,7 @@ function editorProcessKeypress() {
 
     case EditorKey.BACKSPACE:
     case EditorKey.DEL_KEY:
-    case ctrlKey('h'):
+    case ctrlKey("h"):
       // TODO
       break;
 
@@ -448,7 +472,7 @@ function editorProcessKeypress() {
       editorMoveCursor(char);
       break;
 
-    case ctrlKey('l'):
+    case ctrlKey("l"):
     case 0x1b:
       break;
 
@@ -509,6 +533,6 @@ if (import.meta.main) {
 
   while (true) {
     editorRefreshScreen();
-    editorProcessKeypress();
+    await editorProcessKeypress();
   }
 }
