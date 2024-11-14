@@ -227,7 +227,12 @@ function editorOpen(filename: string) {
   console.log(`filename: ${filename}`);
   e.filename = filename;
   const data = Deno.readFileSync(filename);
-  const contents = decoder.decode(data).replaceAll("\r", "").trimEnd();
+  // /\s+$/
+  // \s+ -> matches one or more whitespace characters, including spaces, tabs,
+  //    newlines, and carraige returns
+  // $ -> anchors the match to the end of the string
+  // '' -> replaces the matched whitespace chars with an empty string
+  const contents = decoder.decode(data).replace(/\s+$/, "");
   const lines = contents.split("\n");
 
   let i = 0;
