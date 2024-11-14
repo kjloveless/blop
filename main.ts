@@ -1,5 +1,6 @@
 const VERSION: string = "0.0.1";
 const TAB_STOP: number = 8;
+const QUIT_TIMES: number = 3;
 
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
@@ -18,6 +19,8 @@ interface EditorConfig {
   numRows: number;
   row: string[];
   render: string[];
+  dirty: number;
+  quitTimes: number;
   filename: string;
   statusMsg: string;
   statusMsgTime: Date;
@@ -206,6 +209,7 @@ function editorAppendRow(msg: string) {
   editorUpdateRow(at);
 
   e.numRows++;
+  e.dirty++;
 }
 
 function editorRowInsertChar(row: number, at: number, char: string) {
@@ -213,6 +217,7 @@ function editorRowInsertChar(row: number, at: number, char: string) {
 
   e.row[row] = e.row[row].slice(0, at) + char + e.row[row].slice(at);
   editorUpdateRow(row);
+  e.dirty++;
 }
 
 function editorInsertChar(char: string) {
@@ -241,6 +246,8 @@ async function editorSave() {
 
   const data = encoder.encode(editorRowsToString());
   await Deno.writeFile(e.filename, data, { mode: 0o644 });
+  e.dirty = 0;
+  editorSetStatusMessage(`${data.length} bytes written to disk`);
 }
 
 function editorOpen(filename: string) {
@@ -255,6 +262,7 @@ function editorOpen(filename: string) {
     editorAppendRow(lines[i]);
     i++;
   }
+  e.dirty = 0;
 }
 
 function resetScreen() {
@@ -321,7 +329,7 @@ function editorDrawStatusBar() {
 
   const status = `${
     e.filename != "" ? e.filename : "[No Name]"
-  } - ${e.numRows} lines`;
+  } - ${e.numRows} lines ${ e.dirty != 0 ? "(modified)" : "" }`;
   abAppend(status);
 
   const rStatus = `${e.cursorY + 1}/${e.numRows}`;
@@ -422,6 +430,11 @@ async function editorProcessKeypress() {
       // TODO
       break;
     case ctrlKey("q"):
+      if (e.dirty != 0 && e.quitTimes > 0) {
+        editorSetStatusMessage(`WARNING!!! File has unsaved changes. Press Ctrl-Q ${e.quitTimes} more times to quit`);
+        e.quitTimes--;
+        return;
+      }
       exit("ciao, ciao");
       break;
 
@@ -480,6 +493,8 @@ async function editorProcessKeypress() {
       editorInsertChar(String.fromCharCode(char));
       break;
   }
+
+  e.quitTimes = QUIT_TIMES;
 }
 
 // Generic write to stdout
@@ -512,6 +527,8 @@ function initEditor() {
     numRows: 0,
     row: [],
     render: [],
+    dirty: 0,
+    quitTimes: QUIT_TIMES,
     filename: "",
     statusMsg: "",
     screenCols: columns,
@@ -529,7 +546,7 @@ if (import.meta.main) {
     editorOpen(Deno.args[2]);
   }
 
-  editorSetStatusMessage("HELP: Ctrl-Q = quit");
+  editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit");
 
   while (true) {
     editorRefreshScreen();
