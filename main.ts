@@ -212,11 +212,30 @@ function editorAppendRow(msg: string) {
   e.dirty++;
 }
 
+function editorFreeRow(row: number) {
+  e.row[row] = "";
+  e.render[row] = "";
+}
+
+function editorDelRow(at: number) {
+  if (at < 0 || at >= e.numRows) return;
+
+  editorFreeRow(at);
+  e.row.splice(at, 1);
+  e.dirty++;
+}
+
 function editorRowInsertChar(row: number, at: number, char: string) {
   if (at < 0 || at > e.row[row].length) at = e.row[row].length;
 
   e.row[row] = e.row[row].slice(0, at) + char + e.row[row].slice(at);
   editorUpdateRow(row);
+  e.dirty++;
+}
+
+function editorRowAppendString(row: number, msg: string) {
+  e.row[row] += msg;
+  editorUpdateRow(e.cursorY);
   e.dirty++;
 }
 
@@ -238,10 +257,18 @@ function editorInsertChar(char: string) {
 
 function editorDelChar() {
   if (e.cursorY == e.numRows) return;
+  if (e.cursorX == 0 && e.cursorY == 0) return;
 
   if (e.cursorX > 0) {
     editorRowDelChar(e.cursorY, e.cursorX - 1);
     e.cursorX--;
+  } else {
+    e.cursorX = e.row[e.cursorY - 1].length;
+    editorRowAppendString(e.cursorY - 1, e.row[e.cursorY]);
+    editorDelRow(e.cursorY);
+    e.cursorY--;
+    console.log(`\n\n\n\nhere: ${e.row}`)
+    Deno.exit();
   }
 }
 
