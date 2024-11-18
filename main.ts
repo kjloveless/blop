@@ -222,6 +222,7 @@ function editorDelRow(at: number) {
 
   editorFreeRow(at);
   e.row.splice(at, 1);
+  e.numRows--;
   e.dirty++;
 }
 
@@ -267,8 +268,8 @@ function editorDelChar() {
     editorRowAppendString(e.cursorY - 1, e.row[e.cursorY]);
     editorDelRow(e.cursorY);
     e.cursorY--;
-    console.log(`\n\n\n\nhere: ${e.row}`)
-    Deno.exit();
+    //console.log(`\n\n\n\nhere: ${e.row}`)
+    //Deno.exit();
   }
 }
 
