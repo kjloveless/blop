@@ -443,6 +443,21 @@ function editorSetStatusMessage(msg: string) {
   e.statusMsgTime = new Date();
 }
 
+// TODO: finish this
+function editorPrompt(prompt: string) {
+  let buffer = "";
+
+  while (true) {
+    const msg = sprintf(prompt, buffer);
+    editorSetStatusMessage(msg);
+    editorRefreshScreen();
+
+    const char = editorReadKey();
+
+
+  }
+}
+
 function editorMoveCursor(key: string | number) {
   let row = (e.cursorY >= e.numRows) ? undefined : e.row[e.cursorY];
   switch (key) {
