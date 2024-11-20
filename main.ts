@@ -202,9 +202,10 @@ function editorUpdateRow(at: number) {
   }
 }
 
-function editorAppendRow(msg: string) {
-  const at = e.numRows;
-  e.row[at] = msg;
+function editorInsertRow(at: number, msg: string) {
+  if (at < 0 || at > e.numRows) return;
+
+  e.row.splice(at, 0, msg);
 
   editorUpdateRow(at);
 
@@ -250,10 +251,23 @@ function editorRowDelChar(row: number, at: number) {
 
 function editorInsertChar(char: string) {
   if (e.cursorY == e.numRows) {
-    editorAppendRow("");
+    editorInsertRow(e.numRows, "");
   }
   editorRowInsertChar(e.cursorY, e.cursorX, char);
   e.cursorX++;
+}
+
+function editorInsertNewline() {
+  if (e.cursorX == 0) {
+    editorInsertRow(e.cursorY, "");
+  } else {
+    const row = e.row[e.cursorY];
+    editorInsertRow(e.cursorY + 1, row.slice(e.cursorX));
+    e.row[e.cursorY] = e.row[e.cursorY].slice(0, e.cursorX);
+    editorUpdateRow(e.cursorY);
+  }
+  e.cursorY++;
+  e.cursorX = 0;
 }
 
 function editorDelChar() {
@@ -304,7 +318,7 @@ function editorOpen(filename: string) {
 
   let i = 0;
   while (i < lines.length) {
-    editorAppendRow(lines[i]);
+    editorInsertRow(e.numRows, lines[i]);
     i++;
   }
   e.dirty = 0;
@@ -472,7 +486,7 @@ async function editorProcessKeypress() {
 
   switch (char) {
     case "\r".charCodeAt(0):
-      // TODO
+      editorInsertNewline();
       break;
     case ctrlKey("q"):
       if (e.dirty != 0 && e.quitTimes > 0) {
