@@ -1,3 +1,5 @@
+import { sprintf } from "@std/fmt/printf";
+
 const VERSION: string = "0.0.1";
 const TAB_STOP: number = 8;
 const QUIT_TIMES: number = 3;
@@ -301,7 +303,13 @@ function editorRowsToString(): string {
 }
 
 async function editorSave() {
-  if (e.filename == "" || e.filename == undefined) return;
+  if (e.filename == "" || e.filename == undefined) {
+    e.filename = editorPrompt("Save as: %s");
+    if (!e.filename) {
+      editorSetStatusMessage("Save aborte");
+      return;
+    }
+  }
 
   const data = encoder.encode(editorRowsToString());
   await Deno.writeFile(e.filename, data, { mode: 0o644 });
@@ -443,7 +451,6 @@ function editorSetStatusMessage(msg: string) {
   e.statusMsgTime = new Date();
 }
 
-// TODO: finish this
 function editorPrompt(prompt: string) {
   let buffer = "";
 
@@ -453,8 +460,23 @@ function editorPrompt(prompt: string) {
     editorRefreshScreen();
 
     const char = editorReadKey();
-
-
+    if (char == EditorKey.DEL_KEY || 
+        char == ctrlKey('h') || 
+        char == EditorKey.BACKSPACE) {
+      if (buffer.length != 0) {
+        buffer = buffer.slice(0, buffer.length - 1);
+      }
+    } else if (char == '\x1b'.charCodeAt(0)) {
+      editorSetStatusMessage("");
+      return;
+    } else if (char == '\r'.charCodeAt(0)) {
+      if (buffer.length != 0) {
+        editorSetStatusMessage("");
+        return buffer;
+      }
+    } else if (!isCntrl(char) && char < 128) {
+      buffer += String.fromCharCode(char);
+    }
   }
 }
 
@@ -581,8 +603,7 @@ function write(bytes: string | Uint8Array, guiBytes: boolean = false) {
   if (!guiBytes) bytesWritten += written;
 }
 
-// TODO: figure out if i want to keep this around
-function _iscntrl(charCode: number): boolean {
+function isCntrl(charCode: number): boolean {
   return (charCode < 32 || charCode === 127) ? true : false;
 }
 
