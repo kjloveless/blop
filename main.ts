@@ -178,14 +178,12 @@ function getWindowSize() {
 
 function editorRowCursorXtoRenderX(cursorX: number): number {
   let renderX = 0;
-  let i = 0;
 
-  while (i < cursorX) {
+  for (let i = 0; i < cursorX; i++) {
     if (e.row[e.cursorY][i] == "\t") {
       renderX += (TAB_STOP - 1) - (renderX % TAB_STOP);
     }
     renderX++;
-    i++;
   }
 
   return renderX;
@@ -292,11 +290,9 @@ function editorDelChar() {
 function editorRowsToString(): string {
   const rows = e.row.length;
 
-  let i = 0;
   let contents = "";
-  while (i < rows) {
+  for (let i = 0; i < rows; i++) {
     contents += e.row[i] + "\n";
-    i++;
   }
 
   return contents;
@@ -304,9 +300,9 @@ function editorRowsToString(): string {
 
 async function editorSave() {
   if (e.filename == "" || e.filename == undefined) {
-    e.filename = editorPrompt("Save as: %s");
+    e.filename = editorPrompt("Save as: %s (ESC to cancel)");
     if (!e.filename) {
-      editorSetStatusMessage("Save aborte");
+      editorSetStatusMessage("Save aborted");
       return;
     }
   }
@@ -324,10 +320,8 @@ function editorOpen(filename: string) {
   const contents = decoder.decode(data).trimEnd();
   const lines = contents.split("\n");
 
-  let i = 0;
-  while (i < lines.length) {
+  for (let i = 0; i < lines.length; i++) {
     editorInsertRow(e.numRows, lines[i]);
-    i++;
   }
   e.dirty = 0;
 }
@@ -358,8 +352,7 @@ function editorScroll() {
 }
 
 function editorDrawRows() {
-  let y = 0;
-  while (y < e.screenRows) {
+  for (let y = 0; y < e.screenRows; y++) {
     abAppend("\x1b[K");
     const fileRow = y + e.rowOffset;
     if (fileRow >= e.numRows) {
@@ -387,7 +380,6 @@ function editorDrawRows() {
     }
 
     abAppend("\r\n");
-    y++;
   }
 }
 
@@ -401,14 +393,12 @@ function editorDrawStatusBar() {
 
   const rStatus = `${e.cursorY + 1}/${e.numRows}`;
 
-  let len = status.length;
-  while (len < e.screenCols) {
+  for (let len = status.length; len < e.screenCols; len++) {
     if (e.screenCols - len == rStatus.length) {
       abAppend(rStatus);
       break;
     } else {
       abAppend(" ");
-      len++;
     }
   }
   abAppend("\x1b[m");
